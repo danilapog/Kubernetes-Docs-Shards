@@ -7,8 +7,9 @@ ONLYOFFICE Docs for Kubernetes
   * [1. Add Helm repositories](#1-add-helm-repositories)
   * [2. Install Persistent Storage](#2-install-persistent-storage)
   * [3. Deploy Redis](#3-deploy-redis)
-  * [4. Configure dependent charts](#4-configure-dependent-charts)
-    + [4.1 Configure ingress-nginx/kubernetes subchart](#41-configure-ingress-nginxkubernetes-subchart)
+  * [4. Configure balancer](#4-configure-balancer)
+    + [4.1 Configure ONLYOFFICE Docs built-in balancer](#41-configure-onlyoffice-docs-built-in-balancer)
+    + [4.2 Configure ingress-nginx/kubernetes subchart](#42-configure-ingress-nginxkubernetes-subchart)
   * [5. Deploy StatsD exporter](#5-deploy-statsd-exporter)
     + [5.1 Add Helm repositories](#51-add-helm-repositories)
     + [5.2 Installing Prometheus](#52-installing-prometheus)
@@ -117,19 +118,32 @@ Note: Set the `metrics.enabled=true` to enable exposing Redis metrics to be gath
 
 See more details about installing Redis via Helm [here](https://github.com/bitnami/charts/tree/main/bitnami/redis).
 
-### 4. Configure dependent charts 
+### 4. Configure balancer 
 
-ONLYOFFICE Docs use ingress-nginx by kubernetes as dependencies chart. Bundle nginx-ingress+Redis is used to implement balancing in sharded mode. You can manage the configuration of dependent chart, or disable it to use your own nginx-ingress controller. 
+ONLYOFFICE Docs can use built-in own balancer based on OpenResty or can use ingress-nginx as subchart. Bundle nginx+Redis is used to implement balancing in sharded mode.
 
-If you want to manage the configuration of ingress-nginx controller dependent chart, please check section [#4.1](#41-configure-ingress-nginxkubernetes-subchart)
+For configure built-in balancer, and deploy ONLYOFFICE Docs Shards using built-in balancer (**It is recommended to use this method**), please refer the section [#4.1](#41-configure-built-in-balancer)
+
+For configure ingress-nginx subchart, and deploy ONLYOFFICE Docs Shards using ingress-nginx as balancer, please check section [#4.2](#42-configure-ingress-nginxkubernetes-subchart)
 
 (Optional) Also, you can use your own ingress-nginx controller, for more information please refer to step [#11](#11-deploy-onlyoffice-docs-with-your-own-dependency-optional)
 
-#### 4.1 Configure ingress-nginx/kubernetes subchart
+**NOTE:** ONLYOFFICE Docs Shards working in high scalability mode (more than 1 shard) only if the balancer is deployed.
 
-ingress-nginx/kubernetes subchart is **enabled by default**
+#### 4.1 Configure built-in balancer
 
-Docs working in high scalability mode (more than 1 shard) only with enabled ingress-nginx controller by kubernetes.
+| Parameter                                                   | Description                                                                                                                                                                    | Default                                                                                   |
+|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `ingress-nginx.enabled`                                     | Define that to enable or disable ingress-nginx subchart during deployment                                                                                                      | `false`                                                                                    |
+| `ingress-nginx.controller.replicaCount`                     | Number of deployed controller replicas                                                                                                                                         | `2`                                                                                       |
+| `ingress-nginx.namespaceOverride`                           | Override the ingress-nginx deployment namespace                                                                                                                                | `default`                                                                                 |
+| `ingress-nginx.controller.allowSnippetAnnotations`          | This configuration defines if Ingress Controller should allow users to set their own *-snippet annotations, otherwise this is forbidden / dropped when users add those annotations. Global snippets in ConfigMap are still respected | `true`                              |
+| `ingress-nginx.controller.config.http-snippet`              | This configuration define parameters for http nginx configuration for enable caching                                                                                           | `[]`                                                                                      |
+| `ingress-nginx.service.annotations`                         | Annotations to be added to the external controller service. See controller.service.internal.annotations for annotations to be added to the internal controller service.        | `{}`                                                                                      |
+| `ingress-nginx.controller.extraVolumeMounts`                | Additional volumeMounts to the controller main container. Note: These parameters are used to add configuration to allow custom balancing. For more information please check values.yaml  | `[]`                                                                            |
+| `ingress-nginx.controller.extraVolumes`                     | Additional volumes to the controller pod. Note: These parameters are used to add configuration to allow custom balancing. For more information please check values.yaml        | `[]`                                                                                      |
+
+#### 4.2 Configure ingress-nginx/kubernetes subchart
 
 ### Ingress-nginx subchart parameters
 
@@ -137,7 +151,7 @@ Some overridden values ​​for the ingress-nginx/Kubernetes subchart can be fo
 
 | Parameter                                                   | Description                                                                                                                                                                    | Default                                                                                   |
 |-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `ingress-nginx.enabled`                                     | Define that to enable or disable ingress-nginx subchart during deployment                                                                                                      | `true`                                                                                    |
+| `ingress-nginx.enabled`                                     | Define that to enable or disable ingress-nginx subchart during deployment                                                                                                      | `false`                                                                                    |
 | `ingress-nginx.controller.replicaCount`                     | Number of deployed controller replicas                                                                                                                                         | `2`                                                                                       |
 | `ingress-nginx.namespaceOverride`                           | Override the ingress-nginx deployment namespace                                                                                                                                | `default`                                                                                 |
 | `ingress-nginx.controller.allowSnippetAnnotations`          | This configuration defines if Ingress Controller should allow users to set their own *-snippet annotations, otherwise this is forbidden / dropped when users add those annotations. Global snippets in ConfigMap are still respected | `true`                              |
@@ -512,7 +526,7 @@ List of parameters for broker inside the documentserver pod
 
 | Parameter                                                   | Description                                                                                                                                                                    | Default                                                                                   |
 |-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `ingress.enabled`                                           | Enable the creation of an ingress for the ONLYOFFICE Docs                                                                                                               | `true`                                                                                   |
+| `ingress.enabled`                                           | Enable the creation of an ingress for the ONLYOFFICE Docs                                                                                                               | `false`                                                                                   |
 | `ingress.annotations`                                       | Map of annotations to add to the Ingress. If set to, it takes priority over the `commonAnnotations`                                                                            | `nginx.ingress.kubernetes.io/proxy-body-size: 100m`                                       |
 | `ingress.ingressClassName`                                  | Used to reference the IngressClass that should be used to implement this Ingress                                                                                               | `nginx`                                                                                   |
 | `ingress.host`                                              | Ingress hostname for the ONLYOFFICE Docs ingress                                                                                                                        | `""`                                                                                      |
@@ -754,8 +768,6 @@ You can further limit the access to the `info` page using Nginx [Basic Authentic
 
 ### 11.1 Use your own nginx-ingress controller
 
-**Note:** ONLYOFFICE Docs support **only** nginx-ingress controller [by the kubernetes](https://github.com/kubernetes/ingress-nginx). 
-
 If you want to deploy ONLYOFFICE Docs in cluster where already exist nginx-ingress controller, please follow the step below.
 
 **First of all** is to render PVC template with `helm template` command, and apply it. This PVC are needed for normal functioning of caching static requests.
@@ -763,7 +775,7 @@ If you want to deploy ONLYOFFICE Docs in cluster where already exist nginx-ingre
 **Note:** This PVC must be located in the same namespace as your deployment nginx-ingress controller. To ensure that the generated PVC will be deployed in the same namespace as your nginx-ingress controller, please set the parameter `documentserver.cachePvcNamespace` if needed.
 
 ```bash
-helm template docs onlyoffice/docs-shards --set documentserver.cachePvcNamespace=<YOUR_INGRESS_NAMESPACE> --show-only templates/pvc/ingress-cache-pvc.yaml --dry-run=server > ./CachePVC.yaml 
+helm template docs onlyoffice/docs-shards --set ingress-nginx.enabled=true --set ingress.enabled=true --set customBalancer.enabled=false --set documentserver.cachePvcNamespace=<YOUR_INGRESS_NAMESPACE> --show-only templates/pvc/ingress-cache-pvc.yaml --dry-run=server > ./CachePVC.yaml 
 ```
 
 **The second step**, apply PVC that you create with command below:
@@ -781,7 +793,7 @@ $ helm upgrade <INGRESS_RELEASE_NAME> ingress-nginx --repo https://kubernetes.gi
 **Now**, when your nginx-ingress controller if configure, you can deploy ONLYOFFICE Docs with command:
 
 ```bash
-$ helm install docs onlyoffice/docs-shards --set ingress-nginx.enabled=false
+$ helm install docs onlyoffice/docs-shards --set ingress.enabled=true --set customBalancer.enabled=false --set ingress-nginx.enabled=false
 ```
 
 ## Using Grafana to visualize metrics (optional)
