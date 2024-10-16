@@ -312,13 +312,18 @@ Note: If you need to add license after the ONLYOFFICE Docs is already installed,
 
 ### 2. Deploy ONLYOFFICE Docs
 
-To deploy ONLYOFFICE Docs with the release name `documentserver`:
+To deploy ONLYOFFICE Docs with the release name `documentserver` and enabled built-in balancer:
 
 ```bash
 $ helm install documentserver onlyoffice/docs-shards
 ```
+The command deploys ONLYOFFICE Docs on the Kubernetes cluster in the default configuration. The [Parameters](#4-parameters) section lists the parameters that can be configured during installation.
 
-The command deploys ONLYOFFICE Docs on the Kubernetes cluster in the default configuration. The [Parameters](#4-parameters) section lists the parameters that can be configured during installation. 
+ (**Optional**) To deploy ONLYOFFICE Docs with the release name `documentserver` and used ingress-nginx subchart as balancer:
+
+ ```bash
+$ helm install documentserver onlyoffice/docs-shards --set ingress-nginx.enabled=true --set ingress.enabled=true --set customBalancer.enabled=false
+```
 
 ### 3. Uninstall ONLYOFFICE Docs
 
