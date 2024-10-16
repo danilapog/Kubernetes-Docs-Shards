@@ -8,7 +8,7 @@ ONLYOFFICE Docs for Kubernetes
   * [2. Install Persistent Storage](#2-install-persistent-storage)
   * [3. Deploy Redis](#3-deploy-redis)
   * [4. Configure balancer](#4-configure-balancer)
-    + [4.1 Configure ONLYOFFICE Docs built-in balancer](#41-configure-onlyoffice-docs-built-in-balancer)
+    + [4.1 Configure ONLYOFFICE Docs built-in balancer](#41-configure-built-in-balancer)
     + [4.2 Configure ingress-nginx/kubernetes subchart](#42-configure-ingress-nginxkubernetes-subchart)
   * [5. Deploy StatsD exporter](#5-deploy-statsd-exporter)
     + [5.1 Add Helm repositories](#51-add-helm-repositories)
