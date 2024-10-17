@@ -41,5 +41,5 @@ spec:
           service:
             name: {{ template "ds.svc.name" . }}
             port:
-              number: {{ template "ds.svc.port" . }}
+              number: {{ .Values.customBalancer.service.port }}
 {{- end }}
