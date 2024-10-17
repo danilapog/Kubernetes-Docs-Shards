@@ -997,8 +997,6 @@ example:
 
 ## customBalancer settings. After 8.2.0 is used as default balancer instead of ingress-nginx
 customBalancer:
-  ## If parameter set to false, you should set .Values.ingress-nginx to `true`. Note, that Docs-Shards do not work correctly if you do not deploy any balancer
-  enabled: true
   ## customBalancer.workerConnections set worker connections count for balancer container
   workerConnections: 16384
   ## customBalancer.workerProcesses set worker processes count for balancer container
