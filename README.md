@@ -9,7 +9,6 @@ ONLYOFFICE Docs for Kubernetes
   * [3. Deploy Redis](#3-deploy-redis)
   * [4. Configure balancer](#4-configure-balancer)
     + [4.1 Configure ONLYOFFICE Docs built-in balancer](#41-configure-built-in-balancer)
-    + [4.2 Configure ingress-nginx/kubernetes subchart](#42-configure-ingress-nginxkubernetes-subchart)
   * [5. Deploy StatsD exporter](#5-deploy-statsd-exporter)
     + [5.1 Add Helm repositories](#51-add-helm-repositories)
     + [5.2 Installing Prometheus](#52-installing-prometheus)
@@ -118,79 +117,11 @@ Note: Set the `metrics.enabled=true` to enable exposing Redis metrics to be gath
 
 See more details about installing Redis via Helm [here](https://github.com/bitnami/charts/tree/main/bitnami/redis).
 
-### 4. Configure balancer 
-
-ONLYOFFICE Docs can use built-in own balancer based on OpenResty or can use ingress-nginx as subchart. Bundle nginx+Redis is used to implement balancing in sharded mode.
-
-To eploy ONLYOFFICE Docs Shards using built-in balancer (**It is recommended to use this method**), please refer the bauilt-in balancer configuration section [#4.1](#41-configure-built-in-balancer)
-
-To deploy ONLYOFFICE Docs Shards using ingress-nginx as balancer, please check ingress-nginx subchart configuration section [#4.2](#42-configure-ingress-nginxkubernetes-subchart)
-
-(Optional) Also, you can use your own ingress-nginx controller, for more information please refer to step [#11](#11-deploy-onlyoffice-docs-with-your-own-dependency-optional)
-
-**NOTE:** ONLYOFFICE Docs Shards working in high scalability mode (more than 1 shard) only with deployed balancer (built-in or ingress-nginx).
-
-#### 4.1 Configure built-in balancer
-
-| Parameter                                                   | Description                                                                                                                                                                    | Default                                                                                   |
-|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `customBalancer.enabled`                                    | If parameter set to false, you should set .Values.ingress-nginx to `true`. Note, that Docs-Shards do not work correctly if you do not deploy any balancer                      | `true`                                                                                    |
-| `customBalancer.workerConnections`                          | Set worker connections count for balancer container                                                                                                                            | `16384`                                                                                   |
-| `customBalancer.workerProcesses`                            | Set worker processes count for balancer container                                                                                                                              | `1`                                                                                       |
-| `customBalancer.terminationGracePeriodSeconds`              | The time to terminate gracefully during which the balancer Pod will have the Terminating status                                                                                | `30`                                                                                      |
-| `customBalancer.autoscaling.enabled`                        | Enable or disable autoscaling for balancer replicas                                                                                                                            | `false`                                                                                   |
-| `customBalancer.autoscaling.annotations`                    | Defines annotations that will be additionally added to balancer deployment HPA                                                                                                 | `{}`                                                                                      |
-| `customBalancer.autoscaling.minReplicas`                    | Balancer deployment autoscaling minimum number of replicas                                                                                                                     | `2`                                                                                       |
-| `customBalancer.autoscaling.maxReplicas`                    | Balancer deployment autoscaling maximum number of replicas                                                                                                                     | `4`                                                                                       |
-| `customBalancer.autoscaling.targetCPU.enabled`              | Enable autoscaling of balancer deployment by CPU usage percentage                                                                                                              | `true`                                                                                    |
-| `customBalancer.autoscaling.targetCPU.utilizationPercentage`| Balancer deployment autoscaling target CPU percentage                                                                                                                          | `70`                                                                                      |
-| `customBalancer.autoscaling.targetMemory.enabled`           | Enable autoscaling of balancer deployment by memory usage percentage                                                                                                           | `false`                                                                                   |
-| `customBalancer.autoscaling.targetMemory.utilizationPercentage`| Balancer deployment autoscaling target memory percentage                                                                                                                    | `70`                                                                                      |
-| `customBalancer.customPodAntiAffinity`                      | Prohibiting the scheduling of balancer Pods relative to other Pods containing the specified labels on the same node                                                            | `{}`                                                                                      |
-| `customBalancer.podAffinity`                                | Pod affinity rules for balancer Pods scheduling by nodes relative to other Pods                                                                                                | `{}`                                                                                      |
-| `сustomBalancer.nodeAffinity`                               | Node affinity rules for balancer Pods scheduling by nodes                                                                                                                      | `{}`                                                                                      |
-| `customBalancer.nodeSelector`                               | Node labels for balancer Pods assignment                                                                                                                                       | `{}`                                                                                      |
-| `customBalancer.tolerations`                                | Tolerations for balancer Pods assignment                                                                                                                                       | `[]`                                                                                      |
-| `customBalancer.image.repository`                           | Specify balancer image repository                                                                                                                                              | `onlyoffice/docs-balancer`                                                                |
-| `customBalancer.image.tag`                                  | Specify balancer image tag                                                                                                                                                     | `8.2.0`                                                                                   |
-| `customBalancer.image.pullPolicy`                           | Balancer image pull policy                                                                                                                                                     | `IfNotPresent`                                                                            |
-| `customBalancer.replicas`                                   | Number of balancer replicas to deploy If the `customBalancer.autoscaling.enabled` parameter is enabled, it is ignored                                                          | `3`                                                                                       |
-| `customBalancer.containerPorts`                             | Balancer container port                                                                                                                                                        | `80`                                                                                      |
-| `customBalancer.service.annotations`                        | Map of annotations to add to the ONLYOFFICE Docs balancer service                                                                                                              | `{}`                                                                                      |
-| `customBalancer.service.existing`                           | The name of an existing service for balancer. If not set, a service named `docs-balancer` will be created                                                                      | `""`                                                                                      |
-| `customBalancer.service.type`                               | Balancer service type                                                                                                                                                          | 'ClusteIP`                                                                                |
-| `customBalancer.service.port`                               | Balancer service port                                                                                                                                                          | `80`                                                                                      |
-| `customBalancer.service.sessionAffinity`                    | Session Affinity for ONLYOFFICE Docs balancer service                                                                                                                          | `""`                                                                                      |
-| `customBalancer.service.sessionAffinityConfig`              | Configuration for ONLYOFFICE Docs balancer service Session Affinity                                                                                                            | `{}`                                                                                      |
-| `customBalancer.updateStrategy.type`                        | Balancer deployment update strategy type                                                                                                                                       | `RollingUpdate`                                                                           |
-| `customBalancer.updateStrategy.rollingUpdate.maxUnavailable`| Maximum number of Balancer Pods unavailable during the update process                                                                                                          | `25%`                                                                                     |
-| `customBalancer.updateStrategy.rollingUpdate.maxSurge`      | Maximum number of Balancer Pods created over the desired number of Pods                                                                                                        | `25%`                                                                                     |
-| `customBalancer.podAnnotations`                             | Map of annotations to add to the Balancer deployment Pod                                                                                                                       | `rollme: "{{ randAlphaNum 5 \| quote }}"`                                                 |
-
-#### 4.2 Configure ingress-nginx/kubernetes subchart
-
-### Ingress-nginx subchart parameters
-
-Some overridden values ​​for the ingress-nginx/Kubernetes subchart can be found in the table below:
-
-| Parameter                                                   | Description                                                                                                                                                                    | Default                                                                                   |
-|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `ingress-nginx.enabled`                                     | Define that to enable or disable ingress-nginx subchart during deployment                                                                                                      | `false`                                                                                    |
-| `ingress-nginx.controller.replicaCount`                     | Number of deployed controller replicas                                                                                                                                         | `2`                                                                                       |
-| `ingress-nginx.namespaceOverride`                           | Override the ingress-nginx deployment namespace                                                                                                                                | `default`                                                                                 |
-| `ingress-nginx.controller.allowSnippetAnnotations`          | This configuration defines if Ingress Controller should allow users to set their own *-snippet annotations, otherwise this is forbidden / dropped when users add those annotations. Global snippets in ConfigMap are still respected | `true`                              |
-| `ingress-nginx.controller.config.http-snippet`              | This configuration define parameters for http nginx configuration for enable caching                                                                                           | `[]`                                                                                      |
-| `ingress-nginx.service.annotations`                         | Annotations to be added to the external controller service. See controller.service.internal.annotations for annotations to be added to the internal controller service.        | `{}`                                                                                      |
-| `ingress-nginx.controller.extraVolumeMounts`                | Additional volumeMounts to the controller main container. Note: These parameters are used to add configuration to allow custom balancing. For more information please check values.yaml  | `[]`                                                                            |
-| `ingress-nginx.controller.extraVolumes`                     | Additional volumes to the controller pod. Note: These parameters are used to add configuration to allow custom balancing. For more information please check values.yaml        | `[]`                                                                                      |
-
-See more details about installing ingress-nginx via Helm [here](https://github.com/kubernetes/ingress-nginx/tree/main/charts/ingress-nginx).
-
-### 5. Deploy StatsD exporter
+### 4. Deploy StatsD exporter
 
 *This step is optional. You can skip step [#5](#5-deploy-statsd-exporter) entirely if you don't want to run StatsD exporter*
 
-#### 5.1 Add Helm repositories
+#### 4.1 Add Helm repositories
 
 ```bash
 $ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -198,7 +129,7 @@ $ helm repo add kube-state-metrics https://kubernetes.github.io/kube-state-metri
 $ helm repo update
 ```
 
-#### 5.2 Installing Prometheus
+#### 4.2 Installing Prometheus
 
 To install Prometheus to your cluster, run the following command:
 
@@ -211,7 +142,7 @@ To change the scrape interval, specify the `server.global.scrape_interval` param
 
 See more details about installing Prometheus via Helm [here](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus).
 
-#### 5.3 Installing StatsD exporter
+#### 4.3 Installing StatsD exporter
 
 To install StatsD exporter to your cluster, run the following command:
 
@@ -226,11 +157,11 @@ See more details about installing Prometheus StatsD exporter via Helm [here](htt
 
 To allow the StatsD metrics in ONLYOFFICE Docs, follow step [5.2](#52-metrics-deployment-optional)
 
-### 6. Make changes to Node-config configuration files
+### 5. Make changes to Node-config configuration files
 
-*This step is optional. You can skip step [#6](#6-make-changes-to-node-config-configuration-files) entirely if you don't need to make changes to the configuration files*
+*This step is optional. You can skip step [#5](#5-make-changes-to-node-config-configuration-files) entirely if you don't need to make changes to the configuration files*
 
-#### 6.1 Create a ConfigMap containing a json file
+#### 5.1 Create a ConfigMap containing a json file
 
 In order to create a ConfigMap from a file that contains the `local-production-linux.json` structure, you need to run the following command:
 
@@ -241,33 +172,33 @@ $ kubectl create configmap custom-local-config \
 
 Note: Any name except `local-config` can be used instead of `custom-local-config`.
 
-#### 6.2 Specify parameters when installing ONLYOFFICE Docs
+#### 5.2 Specify parameters when installing ONLYOFFICE Docs
 
 When installing ONLYOFFICE Docs, specify the `extraConf.configMap=custom-local-config` and `extraConf.filename=local-production-linux.json` parameters
 
-Note: If you need to add a configuration file after the ONLYOFFICE Docs is already installed, you need to execute step [6.1](#61-create-a-configmap-containing-a-json-file) 
+Note: If you need to add a configuration file after the ONLYOFFICE Docs is already installed, you need to execute step [5.1](#51-create-a-configmap-containing-a-json-file) 
 and then run the `helm upgrade documentserver onlyoffice/docs-shards --set extraConf.configMap=custom-local-config --set extraConf.filename=local-production-linux.json` command or 
 `helm upgrade documentserver -f ./values.yaml onlyoffice/docs-shards` if the parameters are specified in the `values.yaml` file.
 
-### 7. Add custom Fonts
+### 6. Add custom Fonts
 
-*This step is optional. You can skip step [#7](#7-add-custom-fonts) entirely if you don't need to add your fonts*
+*This step is optional. You can skip step [#6](#6-add-custom-fonts) entirely if you don't need to add your fonts*
 
 In order to add fonts to images, you need to rebuild the images. Refer to the relevant steps in [this](https://github.com/ONLYOFFICE/Docker-Docs#building-onlyoffice-docs) manual.
 Then specify your images when installing the ONLYOFFICE Docs.
 
-### 8. Add Plugins
+### 7. Add Plugins
 
-*This step is optional. You can skip step [#8](#8-add-plugins) entirely if you don't need to add plugins*
+*This step is optional. You can skip step [#7](#7-add-plugins) entirely if you don't need to add plugins*
 
 In order to add plugins to images, you need to rebuild the images. Refer to the relevant steps in [this](https://github.com/ONLYOFFICE/Docker-Docs#building-onlyoffice-docs) manual.
 Then specify your images when installing the ONLYOFFICE Docs.
 
-### 9. Change interface themes
+### 8. Change interface themes
 
-*This step is optional. You can skip step [#9](#9-change-interface-themes) entirely if you don't need to change the interface themes*
+*This step is optional. You can skip step [#8](#8-change-interface-themes) entirely if you don't need to change the interface themes*
 
-#### 9.1 Create a ConfigMap containing a json file
+#### 8.1 Create a ConfigMap containing a json file
 
 To create a ConfigMap with a json file that contains the interface themes, you need to run the following command:
 
@@ -278,11 +209,11 @@ $ kubectl create configmap custom-themes \
 
 Note: Instead of `custom-themes` and `custom-themes.json` you can use any other names.
 
-#### 9.2 Specify parameters when installing ONLYOFFICE Docs
+#### 8.2 Specify parameters when installing ONLYOFFICE Docs
 
 When installing ONLYOFFICE Docs, specify the `extraThemes.configMap=custom-themes` and `extraThemes.filename=custom-themes.json` parameters.
 
-Note: If you need to add interface themes after the ONLYOFFICE Docs is already installed, you need to execute step [6.1](#61-create-a-configmap-containing-a-json-file)
+Note: If you need to add interface themes after the ONLYOFFICE Docs is already installed, you need to execute step [8.1](#81-create-a-configmap-containing-a-json-file)
 and then run the `helm upgrade documentserver onlyoffice/docs-shards --set extraThemes.configMap=custom-themes --set extraThemes.filename=custom-themes.json` command or
 `helm upgrade documentserver -f ./values.yaml onlyoffice/docs-shards` if the parameters are specified in the `values.yaml` file.
 
@@ -550,6 +481,42 @@ List of parameters for broker inside the documentserver pod
 | `example.resources.limits`                                  | The resources limits for the Example container                                                                                                                                 | `{}`                                                                                      |
 | `example.extraConf.configMap`                               | The name of the ConfigMap containing the json file that override the default values. See an example of creation [here](https://github.com/ONLYOFFICE/Kubernetes-Docs?tab=readme-ov-file#71-create-a-configmap-containing-a-json-file) | `""`                               |
 | `example.extraConf.filename`                                | The name of the json file that contains custom values. Must be the same as the `key` name in `example.extraConf.ConfigMap`                                                     | `local.json`                                                                              |
+
+### Balancer parameters
+
+| Parameter                                                   | Description                                                                                                                                                                    | Default                                                                                   |
+|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `customBalancer.workerConnections`                          | Set worker connections count for balancer container                                                                                                                            | `16384`                                                                                   |
+| `customBalancer.workerProcesses`                            | Set worker processes count for balancer container                                                                                                                              | `1`                                                                                       |
+| `customBalancer.terminationGracePeriodSeconds`              | The time to terminate gracefully during which the balancer Pod will have the Terminating status                                                                                | `30`                                                                                      |
+| `customBalancer.autoscaling.enabled`                        | Enable or disable autoscaling for balancer replicas                                                                                                                            | `false`                                                                                   |
+| `customBalancer.autoscaling.annotations`                    | Defines annotations that will be additionally added to balancer deployment HPA                                                                                                 | `{}`                                                                                      |
+| `customBalancer.autoscaling.minReplicas`                    | Balancer deployment autoscaling minimum number of replicas                                                                                                                     | `2`                                                                                       |
+| `customBalancer.autoscaling.maxReplicas`                    | Balancer deployment autoscaling maximum number of replicas                                                                                                                     | `4`                                                                                       |
+| `customBalancer.autoscaling.targetCPU.enabled`              | Enable autoscaling of balancer deployment by CPU usage percentage                                                                                                              | `true`                                                                                    |
+| `customBalancer.autoscaling.targetCPU.utilizationPercentage`| Balancer deployment autoscaling target CPU percentage                                                                                                                          | `70`                                                                                      |
+| `customBalancer.autoscaling.targetMemory.enabled`           | Enable autoscaling of balancer deployment by memory usage percentage                                                                                                           | `false`                                                                                   |
+| `customBalancer.autoscaling.targetMemory.utilizationPercentage`| Balancer deployment autoscaling target memory percentage                                                                                                                    | `70`                                                                                      |
+| `customBalancer.customPodAntiAffinity`                      | Prohibiting the scheduling of balancer Pods relative to other Pods containing the specified labels on the same node                                                            | `{}`                                                                                      |
+| `customBalancer.podAffinity`                                | Pod affinity rules for balancer Pods scheduling by nodes relative to other Pods                                                                                                | `{}`                                                                                      |
+| `сustomBalancer.nodeAffinity`                               | Node affinity rules for balancer Pods scheduling by nodes                                                                                                                      | `{}`                                                                                      |
+| `customBalancer.nodeSelector`                               | Node labels for balancer Pods assignment                                                                                                                                       | `{}`                                                                                      |
+| `customBalancer.tolerations`                                | Tolerations for balancer Pods assignment                                                                                                                                       | `[]`                                                                                      |
+| `customBalancer.image.repository`                           | Specify balancer image repository                                                                                                                                              | `onlyoffice/docs-balancer`                                                                |
+| `customBalancer.image.tag`                                  | Specify balancer image tag                                                                                                                                                     | `8.2.0`                                                                                   |
+| `customBalancer.image.pullPolicy`                           | Balancer image pull policy                                                                                                                                                     | `IfNotPresent`                                                                            |
+| `customBalancer.replicas`                                   | Number of balancer replicas to deploy If the `customBalancer.autoscaling.enabled` parameter is enabled, it is ignored                                                          | `3`                                                                                       |
+| `customBalancer.containerPorts`                             | Balancer container port                                                                                                                                                        | `80`                                                                                      |
+| `customBalancer.service.annotations`                        | Map of annotations to add to the ONLYOFFICE Docs balancer service                                                                                                              | `{}`                                                                                      |
+| `customBalancer.service.existing`                           | The name of an existing service for balancer. If not set, a service named `docs-balancer` will be created                                                                      | `""`                                                                                      |
+| `customBalancer.service.type`                               | Balancer service type                                                                                                                                                          | 'ClusteIP`                                                                                |
+| `customBalancer.service.port`                               | Balancer service port                                                                                                                                                          | `80`                                                                                      |
+| `customBalancer.service.sessionAffinity`                    | Session Affinity for ONLYOFFICE Docs balancer service                                                                                                                          | `""`                                                                                      |
+| `customBalancer.service.sessionAffinityConfig`              | Configuration for ONLYOFFICE Docs balancer service Session Affinity                                                                                                            | `{}`                                                                                      |
+| `customBalancer.updateStrategy.type`                        | Balancer deployment update strategy type                                                                                                                                       | `RollingUpdate`                                                                           |
+| `customBalancer.updateStrategy.rollingUpdate.maxUnavailable`| Maximum number of Balancer Pods unavailable during the update process                                                                                                          | `25%`                                                                                     |
+| `customBalancer.updateStrategy.rollingUpdate.maxSurge`      | Maximum number of Balancer Pods created over the desired number of Pods                                                                                                        | `25%`                                                                                     |
+| `customBalancer.podAnnotations`                             | Map of annotations to add to the Balancer deployment Pod                                                                                                                       | `rollme: "{{ randAlphaNum 5 \| quote }}"`                                                 |
 
 ### Ingress parameters
 
