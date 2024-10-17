@@ -1,27 +1,3 @@
-## Dependencies charts parameters
-
-## ingress-nginx.enabled parameter for manage ingress controller subchart condition
-ingress-nginx:
-  enabled: false
-  namespaceOverride: default
-  controller:
-    replicaCount: 2
-    allowSnippetAnnotations: true
-    config:
-      http-snippet: |
-        proxy_cache_path /var/tmp
-        levels=1:2 keys_zone=docs_cache:75m max_size=4g inactive=1d
-        use_temp_path=off;
-    extraVolumeMounts:
-    - name: file-share
-      mountPath: /var/tmp
-    extraVolumes:
-    - name: file-share
-      persistentVolumeClaim:
-        claimName: nginx-cache-pvc
-    service:
-      annotations: {}
-
 ## Default values for Onlyoffice Docs
 
 ## product.name Specifies name of the product
