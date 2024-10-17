@@ -159,7 +159,7 @@ service:
   ## service.type ONLYOFFICE Docs service type
   type: ClusterIP
   ## service.port ONLYOFFICE Docs service port
-  port: "8888"
+  port: 8888
   ## service.sessionAffinity Session Affinity for ONLYOFFICE Docs service
   ## If not set, `None` will be set as the default value
   ## ref: https://kubernetes.io/docs/reference/networking/virtual-ips/#session-affinity
