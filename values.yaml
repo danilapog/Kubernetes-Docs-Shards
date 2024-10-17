@@ -123,19 +123,6 @@ persistence:
   storageClass: "nfs"
   ## persistence.size PVC Storage Request for Onlyoffice Docs volume
   size: 8Gi
-  ## persistence.dsRequestsCache is define parameters for setting PVC storage for static requests cache
-  dsRequestsCache:
-    ## persistence.dsRequestsCache.existingClaim Name of an existing PVC for static requests cache to use
-    ## If not specified, a PVC named "nginx-cache-pvc" will be created
-    existingClaim: ""
-    ## persistence.dsRequestsCache.annotations Defines annotations that will be additionally added to "nginx-cache-pvc" PVC
-    ## If set to, it takes priority over the `commonAnnotations`
-    ## You can also use `tpl` as the value for the key
-    annotations: {}
-    ## persistence.dsRequestsCache.size PVC Storage Request for Onlyoffice Docs static requests cache volume
-    size: 5Gi
-    ## persistence.dsRequestsCache.namespace define PVC volume namespace. This namespace should be the same where your ingress-controller is deployed
-    namespace: default
 ## Configure a Security Context for a Pod
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 podSecurityContext:
@@ -299,8 +286,6 @@ documentserver:
   terminationGraceTimeSeconds: 600
   ## documentserver.keysRedisDBNum The number of the database for storing the balancing results
   keysRedisDBNum: "1"
-  ## documentserver.dsVersionHashRedisDBNum The number of the database for storing documentserver shards ip adresses
-  dsVersionHashRedisDBNum: "2"
   ## documentserver.KeysExpireTime The time in seconds after which the key will be deleted from the balancing database. 172800 mean 48 hours
   keysExpireTime: 172800
   ## documentserver.annotations Defines annotations that will be additionally added to Documentserver Deployment
