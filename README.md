@@ -7,20 +7,18 @@ ONLYOFFICE Docs for Kubernetes
   * [1. Add Helm repositories](#1-add-helm-repositories)
   * [2. Install Persistent Storage](#2-install-persistent-storage)
   * [3. Deploy Redis](#3-deploy-redis)
-  * [4. Configure balancer](#4-configure-balancer)
-    + [4.1 Configure ONLYOFFICE Docs built-in balancer](#41-configure-built-in-balancer)
-  * [5. Deploy StatsD exporter](#5-deploy-statsd-exporter)
-    + [5.1 Add Helm repositories](#51-add-helm-repositories)
-    + [5.2 Installing Prometheus](#52-installing-prometheus)
-    + [5.3 Installing StatsD exporter](#53-installing-statsd-exporter)
-  * [6. Make changes to Node-config configuration files](#6-make-changes-to-Node-config-configuration-files)
-    + [6.1 Create a ConfigMap containing a json file](#61-create-a-configmap-containing-a-json-file)
-    + [6.2 Specify parameters when installing ONLYOFFICE Docs](#62-specify-parameters-when-installing-onlyoffice-docs)
-  * [7. Add custom Fonts](#7-add-custom-fonts)
-  * [8. Add Plugins](#8-add-plugins)
-  * [9. Change interface themes](#9-change-interface-themes)
-    + [9.1 Create a ConfigMap containing a json file](#91-create-a-configmap-containing-a-json-file)
-    + [9.2 Specify parameters when installing ONLYOFFICE Docs](#92-specify-parameters-when-installing-onlyoffice-docs)
+  * [4. Deploy StatsD exporter](#4-deploy-statsd-exporter)
+    + [4.1 Add Helm repositories](#41-add-helm-repositories)
+    + [4.2 Installing Prometheus](#42-installing-prometheus)
+    + [4.3 Installing StatsD exporter](#43-installing-statsd-exporter)
+  * [5. Make changes to Node-config configuration files](#5-make-changes-to-Node-config-configuration-files)
+    + [5.1 Create a ConfigMap containing a json file](#51-create-a-configmap-containing-a-json-file)
+    + [5.2 Specify parameters when installing ONLYOFFICE Docs](#52-specify-parameters-when-installing-onlyoffice-docs)
+  * [6. Add custom Fonts](#6-add-custom-fonts)
+  * [7. Add Plugins](#7-add-plugins)
+  * [8. Change interface themes](#8-change-interface-themes)
+    + [8.1 Create a ConfigMap containing a json file](#81-create-a-configmap-containing-a-json-file)
+    + [8.2 Specify parameters when installing ONLYOFFICE Docs](#82-specify-parameters-when-installing-onlyoffice-docs)
 - [Deploy ONLYOFFICE Docs](#deploy-onlyoffice-docs)
   * [1. Deploy the ONLYOFFICE Docs license](#1-deploy-the-onlyoffice-docs-license)
     + [1.1 Create secret](#11-create-secret)
@@ -39,8 +37,6 @@ ONLYOFFICE Docs for Kubernetes
   * [8. Update ONLYOFFICE Docs license (optional)](#8-update-onlyoffice-docs-license-optional)
   * [9. ONLYOFFICE Docs installation test (optional)](#9-onlyoffice-docs-installation-test-optional)
   * [10. Access to the info page (optional)](#10-access-to-the-info-page-optional)
-  * [11. Deploy ONLYOFFICE Docs with your own dependency (optional)](#11-deploy-onlyoffice-docs-with-your-own-dependency-optional)
-  * [11.1 Use your own nginx-ingress controller](#111-use-your-own-nginx-ingress-controller)
 - [Using Grafana to visualize metrics (optional)](#using-grafana-to-visualize-metrics-optional)
   * [1. Deploy Grafana](#1-deploy-grafana)
     + [1.1 Deploy Grafana without installing ready-made dashboards](#11-deploy-grafana-without-installing-ready-made-dashboards)
@@ -119,7 +115,7 @@ See more details about installing Redis via Helm [here](https://github.com/bitna
 
 ### 4. Deploy StatsD exporter
 
-*This step is optional. You can skip step [#5](#5-deploy-statsd-exporter) entirely if you don't want to run StatsD exporter*
+*This step is optional. You can skip step [#4](#4-deploy-statsd-exporter) entirely if you don't want to run StatsD exporter*
 
 #### 4.1 Add Helm repositories
 
@@ -213,7 +209,7 @@ Note: Instead of `custom-themes` and `custom-themes.json` you can use any other 
 
 When installing ONLYOFFICE Docs, specify the `extraThemes.configMap=custom-themes` and `extraThemes.filename=custom-themes.json` parameters.
 
-Note: If you need to add interface themes after the ONLYOFFICE Docs is already installed, you need to execute step [8.1](#81-create-a-configmap-containing-a-json-file)
+Note: If you need to add interface themes after the ONLYOFFICE Docs is already installed, you need to execute step [5.1](#51-create-a-configmap-containing-a-json-file)
 and then run the `helm upgrade documentserver onlyoffice/docs-shards --set extraThemes.configMap=custom-themes --set extraThemes.filename=custom-themes.json` command or
 `helm upgrade documentserver -f ./values.yaml onlyoffice/docs-shards` if the parameters are specified in the `values.yaml` file.
 
@@ -249,12 +245,6 @@ To deploy ONLYOFFICE Docs with the release name `documentserver` and enabled bui
 $ helm install documentserver onlyoffice/docs-shards
 ```
 The command deploys ONLYOFFICE Docs on the Kubernetes cluster in the default configuration. The [Parameters](#4-parameters) section lists the parameters that can be configured during installation.
-
- (**Optional**) To deploy ONLYOFFICE Docs with the release name `documentserver` and used ingress-nginx subchart as balancer:
-
- ```bash
-$ helm install documentserver onlyoffice/docs-shards --set ingress-nginx.enabled=true --set ingress.enabled=true --set customBalancer.enabled=false
-```
 
 ### 3. Uninstall ONLYOFFICE Docs
 
@@ -760,45 +750,13 @@ Generally the Pods / Nodes / Load Balancer addresses will actually be the client
 In this case the access to the info page will be available to everyone.
 You can further limit the access to the `info` page using Nginx [Basic Authentication](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) which you can turn on by setting `documentserver.proxy.infoAllowedUser` parameter value and by setting the password using `documentserver.proxy.infoAllowedPassword` parameter, alternatively you can use the existing secret with password by setting its name with `documentserver.proxy.infoAllowedExistingSecret` parameter.
 
-### 11. Deploy ONLYOFFICE Docs with your own dependency (optional)
-
-### 11.1 Use your own nginx-ingress controller
-
-If you want to deploy ONLYOFFICE Docs in cluster where already exist nginx-ingress controller, please follow the step below.
-
-**First of all** is to render PVC template with `helm template` command, and apply it. This PVC are needed for normal functioning of caching static requests.
-
-**Note:** This PVC must be located in the same namespace as your deployment nginx-ingress controller. To ensure that the generated PVC will be deployed in the same namespace as your nginx-ingress controller, please set the parameter `documentserver.cachePvcNamespace` if needed.
-
-```bash
-helm template docs onlyoffice/docs-shards --set ingress-nginx.enabled=true --set ingress.enabled=true --set customBalancer.enabled=false --set documentserver.cachePvcNamespace=<YOUR_INGRESS_NAMESPACE> --show-only templates/pvc/ingress-cache-pvc.yaml --dry-run=server > ./CachePVC.yaml 
-```
-
-**The second step**, apply PVC that you create with command below:
-
-```bash
-$ kubectl apply -f ./CachePVC.yaml
-```
-
-**The third step**, you need to update your nginx-ingress controller deployment with new PVC parameters. That will add new volume where static cache will be stored. Follow the commands:
-
-```bash
-$ helm upgrade <INGRESS_RELEASE_NAME> ingress-nginx --repo https://kubernetes.github.io/ingress-nginx -n <INGRESS_NAMESPACE> -f https://raw.githubusercontent.com/ONLYOFFICE/Kubernetes-Docs-Shards/master/sources/ingress_values.yaml
-```
-
-**Now**, when your nginx-ingress controller if configure, you can deploy ONLYOFFICE Docs with command:
-
-```bash
-$ helm install docs onlyoffice/docs-shards --set ingress.enabled=true --set customBalancer.enabled=false --set ingress-nginx.enabled=false
-```
-
 ## Using Grafana to visualize metrics (optional)
 
 *This step is optional. You can skip this section if you don't want to install Grafana*
 
 ### 1. Deploy Grafana
 
-Note: It is assumed that step [#6.2](#62-installing-prometheus) has already been completed.
+Note: It is assumed that step [#4.2](#42-installing-prometheus) has already been completed.
 
 #### 1.1 Deploy Grafana without installing ready-made dashboards
 
@@ -821,7 +779,7 @@ $ helm install grafana bitnami/grafana \
 To install ready-made Grafana dashboards, set the `grafana.enabled` and `grafana.dashboard.enabled` parameters to `true`.
 If ONLYOFFICE Docs is already installed you need to run the `helm upgrade documentserver onlyoffice/docs-shards --set grafana.enabled=true --set grafana.dashboard.enabled=true` command or `helm upgrade documentserver -f ./values.yaml onlyoffice/docs-shards` if the parameters are specified in the [values.yaml](values.yaml) file.
 As a result, ready-made dashboards in the `JSON` format will be downloaded from the Grafana [website](https://grafana.com/grafana/dashboards),
-the necessary edits will be made to them and configmap will be created from them. A dashboard will also be added to visualize metrics coming from the ONLYOFFICE Docs (it is assumed that step [#6](#6-deploy-statsd-exporter) has already been completed).
+the necessary edits will be made to them and configmap will be created from them. A dashboard will also be added to visualize metrics coming from the ONLYOFFICE Docs (it is assumed that step [#4](#4-deploy-statsd-exporter) has already been completed).
 
 #### 1.2.2 Installing Grafana
 
