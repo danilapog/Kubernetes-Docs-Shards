@@ -195,10 +195,20 @@ access_by_lua_block {
       ngx.var.custom_endpoint = tostring(redis_get(API_KEY))
    end
  else
+   {{- if eq .Values.customBalancer.log.level "DEBUG" }}
+   print(string.format("DEBUG: ENDPOINT %s exist in Redis, proceed...", exist_endpoint))
+   {{- end }}
    local endpoint_found = check_endpoint(exist_endpoint)
    if endpoint_found == false then
+   {{- if .Values.documentserver.keysExpire.enabled }}
    {{- if eq .Values.customBalancer.log.level "DEBUG" }}
-   print(string.format("DEBUG: ENDPOINT %s WILL BE REMOVE", exist_endpoint))
+   print(string.format("DEBUG: But %s wasn't find in balancer talbe, endpoint will be removed...", exist_endpoint))
+   {{- end }}
+   ngx.var.custom_endpoint = exist_endpoint
+   {{- end }}
+   {{- if not .Values.documentserver.keysExpire.enabled }}
+   {{- if eq .Values.customBalancer.log.level "DEBUG" }}
+   print(string.format("DEBUG: Set ttl for %s endpoint", exist_endpoint))
    {{- end }}
    local placeholder = tostring(red:get(string.format("del_%s", exist_endpoint)))
    if placeholder == 'userdata: NULL' then
@@ -228,6 +238,7 @@ access_by_lua_block {
      {{- end }}
      ngx.var.custom_endpoint = exist_endpoint
    end
+   {{- end }}
  else
    {{- if eq .Values.customBalancer.log.level "DEBUG" }}
    print("DEGUB: Endpoint exist, just go forward...")
