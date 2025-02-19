@@ -186,9 +186,7 @@ access_by_lua_block {
    local new_custom_endpoint = docs_balancer.balance_ep()
    if redis_set(API_KEY, new_custom_endpoint) then
       redis_set_ipkey(API_KEY, new_custom_endpoint)
-      {{- if .Value.keysExpire.enabled }}
       redis_expire(API_KEY, {{ .Values.documentserver.keysExpireTime }})
-      {{- end }}
       ngx.var.custom_endpoint = new_custom_endpoint
    else
       {{- if eq .Values.customBalancer.log.level "DEBUG" }}
@@ -197,13 +195,6 @@ access_by_lua_block {
       ngx.var.custom_endpoint = tostring(redis_get(API_KEY))
    end
  else
-   {{- if not .Value.keysExpire.enabled }}
-   {{- if eq .Values.customBalancer.log.level "DEBUG" }}
-   print(string.format("DEGUB: Endpoint %s exist in Redis, just go forward...", exist_endpoint))
-   {{- end }}
-   ngx.var.custom_endpoint = exist_endpoint
-   {{- end }}
-   {{- if .Values.keysExpire.enabled }}
    local endpoint_found = check_endpoint(exist_endpoint)
    if endpoint_found == false then
    {{- if eq .Values.customBalancer.log.level "DEBUG" }}
@@ -246,7 +237,6 @@ access_by_lua_block {
      redis_expire(API_KEY, {{ .Values.documentserver.keysExpireTime }})
    end
  end
- {{- end }}
 end
 {{- if and .Values.connections.redisKeepaliveTimeout .Values.connections.redisKeepalivePoolSize }}
 local ok, err = red:set_keepalive({{ .Values.connections.redisKeepaliveTimeout }}, {{ .Values.connections.redisKeepalivePoolSize }})
